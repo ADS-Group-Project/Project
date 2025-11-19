@@ -1,5 +1,5 @@
-ADS GROUP PROJECT
-MEMBERS:
+#ADS GROUP PROJECT
+PROJECT NAME :
 | NAME | ID |
 |------|-----------|
 |Name|ID|
