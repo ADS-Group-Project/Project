@@ -30,7 +30,7 @@ Search Algorithm: BST Search. Similar logic to Binary Search but using pointers.
 Complexity: `O(log n)` on average.
 Verdict: Excellent for both searching and dynamic insertion.
 
---
+-----------------------------------------------------------------------------------------------
 
 How to Compile and Run
 
@@ -38,18 +38,18 @@ This program is written in C++. You will need a compiler like `g++`.
 
 1. Run the Baseline Version
 
-cd Project
-g++ baseline1.cpp
-./a.out
+`cd Project`
+`g++ baseline1.cpp`
+`./a.out`
 
 2. Run the Optimized Sorted Array Version
 
-cd Project
-g++ optimized1.cpp
-./a.out
+`cd Project`
+`g++ optimized1.cpp`
+`./a.out`
 
 3. Run the BST Version
 
-cd Project
-g++ optimized_bst.cpp
-./a.out
+`cd Project`
+`g++ optimized_bst.cpp`
+`./a.out`
