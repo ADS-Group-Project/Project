@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <algorithm>
 #include <limits>
 #include <string>
 
@@ -17,15 +18,6 @@ struct Student {
     string name;
     string course;
     vector<SubjectRecord> subjects;
-};
-
-// --------- Binary Search Tree Node ---------
-struct TreeNode {
-    Student student;
-    TreeNode* left;
-    TreeNode* right;
-
-    TreeNode(const Student& newStudent) : student(newStudent), left(nullptr), right(nullptr) {}
 };
 
 // --------- Helper: safely read an integer ---------
@@ -60,36 +52,45 @@ double readDouble(const string &prompt) {
     }
 }
 
-// --------- Insert a student into the Binary Search Tree ---------
-void insertStudent(TreeNode*& root, const Student& newStudent, int& steps) {
-    steps++;  // Increment step for each comparison
-    
-    if (root == nullptr) {
-        root = new TreeNode(newStudent);
-        cout << "Student with ID " << newStudent.id << " has been added successfully.\n";
-    } else if (newStudent.id < root->student.id) {
-        insertStudent(root->left, newStudent, steps);  // Go left if new ID is smaller
-    } else if (newStudent.id > root->student.id) {
-        insertStudent(root->right, newStudent, steps);  // Go right if new ID is larger
-    } else {
-        cout << "ID " << newStudent.id << " already exists in the system.\n";
+// --------- Binary search by ID (sorted by id) ---------
+int binarySearchById(const vector<Student> &students, int targetId, int &steps) {
+    int left = 0;
+    int right = static_cast<int>(students.size()) - 1;
+    steps = 0;
+
+    while (left <= right) {
+        steps++;  // Increment steps on each check
+        int mid = left + (right - left) / 2;
+        if (students[mid].id == targetId) {
+            return mid;
+        } else if (targetId < students[mid].id) {
+            right = mid - 1;
+        } else {
+            left = mid + 1;
+        }
     }
+    return -1; // not found
 }
 
-// --------- Search for a student by ID in the Binary Search Tree ---------
-bool searchStudent(TreeNode* root, int targetId, int& steps) {
-    if (root == nullptr) {
-        return false;
+// --------- Insert student sorted by ID ---------
+void insertStudentSorted(vector<Student> &students, const Student &newStudent) {
+    int idx = binarySearchById(students, newStudent.id, idx);  // Not used, just for demonstration
+    if (idx != -1) {
+        cout << "ID " << newStudent.id << " already exists in the system.\n";
+        return;
     }
 
-    steps++;  // Increment steps on each comparison
-    if (targetId == root->student.id) {
-        return true;
-    } else if (targetId < root->student.id) {
-        return searchStudent(root->left, targetId, steps);  // Search in left subtree
-    } else {
-        return searchStudent(root->right, targetId, steps);  // Search in right subtree
-    }
+    auto pos = lower_bound(
+        students.begin(),
+        students.end(),
+        newStudent.id,
+        [](const Student &s, int value) {
+            return s.id < value;
+        }
+    );
+
+    students.insert(pos, newStudent);
+    cout << "Student with ID " << newStudent.id << " has been added successfully.\n";
 }
 
 // --------- Show a single student's info ---------
@@ -121,7 +122,7 @@ void showStudent(const Student &s) {
 void showMenu() {
     cout << "\n==============================\n";
     cout << "  Student ID Search System\n";
-    cout << "  (Binary Search Tree Implementation)\n";
+    cout << "  (Sorted Array + Binary Search)\n";
     cout << "==============================\n";
     cout << "1. Enter new student\n";
     cout << "2. Search student by ID\n";
@@ -130,8 +131,8 @@ void showMenu() {
     cout << "Enter your choice: ";
 }
 
-// --------- Option 1: Enter new student ---------
-void menuEnterNewStudent(TreeNode*& root) {
+// --------- Option 1: Enter new student (with many subjects) ---------
+void menuEnterNewStudent(vector<Student> &students) {
     while (true) {
         Student s;
 
@@ -167,10 +168,7 @@ void menuEnterNewStudent(TreeNode*& root) {
             s.subjects.push_back(sub);
         }
 
-        int steps = 0;  // Initialize steps counter
-        insertStudent(root, s, steps);
-
-        cout << "Steps taken to insert the student: " << steps << "\n";
+        insertStudentSorted(students, s);
 
         // Ask user what next
         while (true) {
@@ -194,8 +192,8 @@ void menuEnterNewStudent(TreeNode*& root) {
 }
 
 // --------- Option 2: Search student by ID ---------
-void menuSearchStudent(TreeNode* root) {
-    if (root == nullptr) {
+void menuSearchStudent(const vector<Student> &students) {
+    if (students.empty()) {
         cout << "\nNo students in the system yet. Please add some first.\n";
         return;
     }
@@ -205,8 +203,10 @@ void menuSearchStudent(TreeNode* root) {
         int targetId = readInt("Enter student ID to search: ");
         int steps = 0; // Initialize steps counter
 
-        if (searchStudent(root, targetId, steps)) {
-            cout << "Student found. Steps taken: " << steps << "\n";
+        int index = binarySearchById(students, targetId, steps);
+        if (index != -1) {
+            showStudent(students[index]);
+            cout << "Steps taken to find the student: " << steps << "\n";
         } else {
             cout << "ID " << targetId << " not found in the system.\n";
         }
@@ -233,8 +233,8 @@ void menuSearchStudent(TreeNode* root) {
 }
 
 // --------- Option 3: Insert marks for subjects ---------
-void menuInsertMarks(TreeNode* root) {
-    if (root == nullptr) {
+void menuInsertMarks(vector<Student> &students) {
+    if (students.empty()) {
         cout << "\nNo students in the system yet. Please add some first.\n";
         return;
     }
@@ -243,13 +243,29 @@ void menuInsertMarks(TreeNode* root) {
         cout << "\n--- Insert Marks ---\n";
         int targetId = readInt("Enter student ID to insert marks: ");
 
-        int steps = 0;
-        if (searchStudent(root, targetId, steps)) {
-            // Assuming you have the reference to the student, insert marks here.
-            // This is a simplified example; actual logic will require traversal to the student node.
-            cout << "Marks updated for student ID: " << targetId << "\n";
-        } else {
+        int index = binarySearchById(students, targetId, index); // Not used, just for demo
+        if (index == -1) {
             cout << "ID " << targetId << " not found in the system.\n";
+        } else {
+            Student &s = students[index];
+            if (s.subjects.empty()) {
+                cout << "This student has no subjects registered.\n";
+            } else {
+                cout << "\nInserting marks for student:\n";
+                showStudent(s);
+                cout << "\nEnter marks for each subject.\n";
+                cout << "(If you do not want to change a subject's mark, you can enter the same value again.)\n";
+
+                for (size_t i = 0; i < s.subjects.size(); ++i) {
+                    cout << "\nSubject " << (i + 1) << ": " << s.subjects[i].name << "\n";
+                    double mark = readDouble("Enter mark: ");
+                    s.subjects[i].mark = mark;
+                    s.subjects[i].hasMark = true;
+                }
+
+                cout << "\nAll marks updated for this student.\n";
+                showStudent(s);
+            }
         }
 
         // Ask user what next
@@ -262,7 +278,8 @@ void menuInsertMarks(TreeNode* root) {
             );
 
             if (choice == 1) {
-                break; // loop again
+                // loop again
+                break;
             } else if (choice == 2) {
                 return;
             } else {
@@ -274,7 +291,7 @@ void menuInsertMarks(TreeNode* root) {
 
 // --------- main ---------
 int main() {
-    TreeNode* root = nullptr; // Start with an empty BST
+    vector<Student> students;
     int choice;
 
     while (true) {
@@ -290,13 +307,13 @@ int main() {
 
         switch (choice) {
             case 1:
-                menuEnterNewStudent(root);
+                menuEnterNewStudent(students);
                 break;
             case 2:
-                menuSearchStudent(root);
+                menuSearchStudent(students);
                 break;
             case 3:
-                menuInsertMarks(root);
+                menuInsertMarks(students);
                 break;
             case 4:
                 cout << "\nExiting program. Goodbye!\n";
